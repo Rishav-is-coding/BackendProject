@@ -257,7 +257,7 @@ const getCurrentUser = asyncHandler(async (req, res) => {
         .json(200, req.user , "current user fetched successfully")
 })
 
-const updateAccoutDetails = asyncHandler(async(req, res) => {
+const updateAccountDetails = asyncHandler(async(req, res) => {
     const {fullName, email} = req.body
 
     if(!fullName || !email) {
@@ -489,4 +489,4 @@ const getWatchHistory = asyncHandler(async (req, res) => {
         )
 })
 
-export {registerUser, loginUser, logoutUser , refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccoutDetails, updateUserAvatar,  updateUserCoverImage, getUserChannelProfile, getWatchHistory}
+export {registerUser, loginUser, logoutUser , refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountDetails, updateUserAvatar,  updateUserCoverImage, getUserChannelProfile, getWatchHistory}
