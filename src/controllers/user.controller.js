@@ -161,8 +161,11 @@ const logoutUser = asyncHandler(async (req, res) => {
     await User.findByIdAndUpdate(
         req.user._id,
         {
-            $set : {
-                refreshToken : undefined
+            // $set : {
+            //     refreshToken : undefined //or null
+            // },
+            $unset : {
+                refreshToken : 1 //this removes the field from the document
             }
         }, 
         {
@@ -254,7 +257,11 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 const getCurrentUser = asyncHandler(async (req, res) => {
     return res
         .status(200)
-        .json(200, req.user , "current user fetched successfully")
+        .json(
+            new ApiResponse(
+                200, req.user , "current user fetched successfully"
+            )
+        )
 })
 
 const updateAccountDetails = asyncHandler(async(req, res) => {
@@ -376,7 +383,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         },
         {
             $lookup : {
-                form : "subscriptions",
+                from : "subscriptions",
                 localField : "_id",
                 foreignField : "channel",
                 as : "subscribers"
@@ -384,7 +391,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         },
         {
             $lookup : {
-                form : "subscriptions",
+                from : "subscriptions",
                 localField : "_id",
                 foreignField : "subscriber",
                 as : "subscribedTo"
@@ -398,10 +405,12 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
                 channelSubscribedToCount : {
                     $size : "$subscribedTo"
                 },
-                isSubscribed : {
-                    if : {$in : [req.user?._id ,  "$subscribers.subscriber"]},
-                    then: true,
-                    else: false
+                isSubscribed: {
+                    $cond: {
+                        if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+                        then: true,
+                        else: false
+                    }
                 }
             }
         },
