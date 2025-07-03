@@ -45,17 +45,22 @@ const registerUser = asyncHandler( async (req , res) => {
         throw new ApiError(400 , "All fields are required")
     }
 
-    //check if user already exists : username, email
+    //check if user already exists : userName, email
     const existedUser = await User.findOne({
         $or : [{ userName } , { email }]
     })
 
     if(existedUser) {
-        throw new ApiError(409, "User with email or username already exists")
+        throw new ApiError(409, "User with email or userName already exists")
     }
 
     //check for images, check for avatar
-    const avatarLocalPath = req.files?.avatar[0]?.path
+    let avatarLocalPath;
+    if (req.files && Array.isArray(req.files.avatar) && req.files.avatar.length > 0) {
+        avatarLocalPath = req.files.avatar[0].path;
+    } else {
+        throw new ApiError(400, 'Avatar file is missing');
+    }
     //const coverImageLocalPath = req.files?.coverImage[0]?.path  //undefined error
 
     let coverImageLocalPath;
@@ -103,7 +108,7 @@ const registerUser = asyncHandler( async (req , res) => {
 
 const loginUser = asyncHandler(async (req, res) => {
     //get data from req body
-    //username and email
+    //userName and email
     //find the user
     //password check
     //access and refresh token
@@ -113,9 +118,9 @@ const loginUser = asyncHandler(async (req, res) => {
     //get data from req body
     const {email, userName, password} = req.body
 
-    //username and email
+    //userName and email
     if(!userName && !email) {
-        throw new ApiError(400 , "username or email is required")
+        throw new ApiError(400 , "userName or email is required")
     }
 
     //find the user
@@ -375,7 +380,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     const {userName} = req.params
 
     if(!userName?.trim()) {
-        throw new ApiError(400 , "username is missing")
+        throw new ApiError(400 , "userName is missing")
     }
 
     const channel = await User.aggregate([
@@ -504,7 +509,7 @@ const getWatchHistory = asyncHandler(async (req, res) => {
 const getUserChannelVideos = asyncHandler(async (req, res) => {
     const {userName} = req.params
     if(!userName) {
-        throw new ApiError(404 , "Username not found")
+        throw new ApiError(404 , "userName not found")
     }
 
     const user = await User.findOne({userName})
@@ -531,7 +536,7 @@ const getUserChannelVideos = asyncHandler(async (req, res) => {
 const getDashboardData = asyncHandler(async (req, res) => {
     const {userName} = req.params
     if(!userName) {
-        throw new ApiError(404, "username not found")
+        throw new ApiError(404, "userName not found")
     }
 
     const user = await User.findOne({userName})

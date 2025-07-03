@@ -108,7 +108,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
             url : videoFile.url,
             publicId: videoFile.public_id
         },
-        duration : videoFile?.duration,
+        duration : videoFile?.duration || 0,
         isPublished : true,
         owner : new mongoose.Types.ObjectId(req.user?._id)
     })
@@ -120,9 +120,11 @@ const publishAVideo = asyncHandler(async (req, res) => {
     return res
         .status(200)
         .json(
-            200,
-            video,
-            "Video uploaded successfully"
+            new ApiResponse(
+                200,
+                video,
+                "Video uploaded successfully"
+            )
         )
 })
 

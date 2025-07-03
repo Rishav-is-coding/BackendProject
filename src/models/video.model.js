@@ -7,12 +7,12 @@ const videoSchema = new Schema({
         ref : "User"
     },
     videoFile : {
-        type: String, //cloudnary url
-        required : true
+        url: { type: String, required: true },
+        publicId: { type: String, required: true }
     },
     thumbnail : {
-        type : String,
-        required : true
+        url: { type: String, required: true },
+        publicId: { type: String, required: true },
     },
     title : {
         type: String,
