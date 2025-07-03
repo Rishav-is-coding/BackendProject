@@ -5,6 +5,8 @@ import { uploadOnCloudinary } from '../utils/cloudinary.js'
 import { ApiResponse } from '../utils/ApiResponse.js';
 import jwt from "jsonwebtoken";
 import mongoose from 'mongoose';
+import { Video } from "../models/video.model.js";
+import { Like } from "../models/like.model.js";
 
 
 const generateAccessAndRefreshToken = async (userId) => {
@@ -499,4 +501,135 @@ const getWatchHistory = asyncHandler(async (req, res) => {
         )
 })
 
-export {registerUser, loginUser, logoutUser , refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountDetails, updateUserAvatar,  updateUserCoverImage, getUserChannelProfile, getWatchHistory}
+const getUserChannelVideos = asyncHandler(async (req, res) => {
+    const {userName} = req.params
+    if(!userName) {
+        throw new ApiError(404 , "Username not found")
+    }
+
+    const user = await User.findOne({userName})
+    if(!user) {
+        throw new ApiError(400 , "user not found")
+    }
+
+    const videos = await Video.find({owner : user._id}).populate(
+        "owner",
+        "fullName avatar"
+    )
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                videos,
+                "Videos fetched successfully"
+            )
+        )
+})
+
+const getDashboardData = asyncHandler(async (req, res) => {
+    const {userName} = req.params
+    if(!userName) {
+        throw new ApiError(404, "username not found")
+    }
+
+    const user = await User.findOne({userName})
+    if(!user) {
+        throw new ApiError(400, "user not found")
+    }
+
+    if (user._id.toString() !== req.user?._id.toString()) {
+        throw new ApiError(401, "You are not an admin");
+    }
+
+    const totalViews = await Video.aggregate([
+        {
+            $match: {
+                owner: user._id,
+            },
+        },
+        {
+            $group: {
+                _id: null,
+                totalViews: { $sum: "$views" },
+            },
+        },
+    ]);
+
+    const totalLikes = await Like.aggregate([
+        {
+            $lookup: {
+                from: "videos",
+                localField: "video",
+                foreignField: "_id",
+                as: "videoDetails",
+            },
+        },
+        {
+            $unwind: "$videoDetails",
+        },
+        {
+            $match: {
+                "videoDetails.owner": user._id,
+            },
+        },
+        {
+            $group: {
+                _id: null,
+                totalLikes: { $sum: 1 },
+            },
+        },
+    ]);
+
+    const totalVideos = await Video.find({ owner: user._id }).select(
+        "-password -refreshToken"
+    );
+
+    const subscribers = await User.aggregate([
+        {
+            $match: {
+                subscriber: user._id,
+            },
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "channel",
+                foreignField: "_id",
+                as: "subscribers",
+            },
+        },
+        {
+            $addFields: {
+                subscribersCount: {
+                $size: "$subscribers",
+                },
+            },
+        },
+        {
+            $project: {
+                subscribersCount: 1,
+            },
+        },
+  ]);
+  // console.log("SUBSCRIBERS", subscribers);
+
+  // console.log("TOTAL VIDEOS", videos.length);
+  // console.log("TOTAL VIEWS", totalViews);
+
+  return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                totalViews: totalViews[0]?.totalViews || 0,
+                totalSubscribers: subscribers[0]?.subscribersCount || 0,
+                totalVideos: totalVideos || 0,
+                totalLikes: totalLikes[0]?.totalLikes || 0,
+            },
+            "Dashboard data fetched successfully"
+        )
+    )
+})
+
+export {registerUser, loginUser, logoutUser , refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountDetails, updateUserAvatar,  updateUserCoverImage, getUserChannelProfile, getWatchHistory, getUserChannelVideos, getDashboardData}
