@@ -104,7 +104,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
         .json(
             new ApiResponse(
                 200,
-                subscribers[0],
+                subscribers[0] || 0,
                 "subscribers fetched"
             )
         )

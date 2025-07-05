@@ -33,14 +33,14 @@ const createPlaylist = asyncHandler(async (req, res) => {
 })
 
 const getUserPlaylists = asyncHandler(async (req, res) => {
-    const {userId} = req.params
+    const {userName} = req.params
     //TODO: get user playlists
 
-    if(!userId || !isValidObjectId(userName)) {
-        throw new ApiError(400, "getUserPlaylists : invalid userId")
+    if(!userName) {
+        throw new ApiError(400, "getUserPlaylists : invalid userName")
     }
 
-    const user = await User.findOne({userId})
+    const user = await User.findOne({userName})
     if(!user){
         throw new ApiError(404, "user not found")
     }
