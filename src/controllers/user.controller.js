@@ -123,16 +123,23 @@ const loginUser = asyncHandler(async (req, res) => {
         throw new ApiError(400 , "userName or email is required")
     }
 
+    const cleanedEmail = email ? String(email) : undefined;
+    const cleanedUserName = userName ? String(userName) : undefined;
+    const cleanedPassword = password ? String(password) : undefined;
+
     //find the user
     const user = await User.findOne({
-        $or : [{userName} , {email}]
-    })
+    $or: [
+        cleanedUserName ? { userName: cleanedUserName } : {},
+        cleanedEmail ? { email: cleanedEmail } : {}
+    ]
+    });
     if(!user) {
         throw new ApiError(404, "user not found")
     }
 
     //password check
-    const isPasswordValid =  await user.isPasswordCorrect(password)
+    const isPasswordValid =  await user.isPasswordCorrect(cleanedPassword)
     if(!isPasswordValid) {
         throw new ApiError(401, "wrong password")
     }
