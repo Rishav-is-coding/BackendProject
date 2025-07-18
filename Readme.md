@@ -399,6 +399,6 @@ This project is licensed under the MIT License - see the [LICENSE](https://www.g
 
 For any questions or feedback, feel free to reach out:
 
-* **Your Name/Handle:** [Your GitHub Username/LinkedIn Profile]
+* **Your Name/Handle:** Rishav
 
-* **Email:** [Your Email Address]
+* **Email:** rishavrajiitg2025@gmail.com
