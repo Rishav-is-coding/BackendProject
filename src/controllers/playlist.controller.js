@@ -1,3 +1,5 @@
+// backendproject/src/controllers/playlist.controller.js
+
 import mongoose, {isValidObjectId} from "mongoose"
 import {Playlist} from "../models/playlist.model.js"
 import {ApiError} from "../utils/ApiError.js"
@@ -84,7 +86,6 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
 
 const getPlaylistById = asyncHandler(async (req, res) => {
     const {playlistId} = req.params
-    //TODO: get playlist by id
 
     if(!playlistId || !isValidObjectId(playlistId)) {
         throw new ApiError(400, "invalid playlistId")
@@ -92,7 +93,7 @@ const getPlaylistById = asyncHandler(async (req, res) => {
 
     const playlist = await Playlist.aggregate([
         {
-            $match :{ 
+            $match :{
                 _id : new mongoose.Types.ObjectId(playlistId)
             }
         },
@@ -106,15 +107,15 @@ const getPlaylistById = asyncHandler(async (req, res) => {
                     {
                         $lookup :{
                             from : "subscriptions",
-                            localField: "id",
+                            localField: "_id", // <-- FIX: Changed from "id" to "_id"
                             foreignField : "channel",
                             as : "subscribers"
                         }
                     },
                     {
                         $addFields :{
-                            subsciberCount :{
-                                $size : "$subcribers"
+                            subscriberCount :{ // <-- FIX: Corrected typo from subsciberCount
+                                $size : "$subscribers"
                             }
                         }
                     },
@@ -122,23 +123,23 @@ const getPlaylistById = asyncHandler(async (req, res) => {
                         $project :{
                             avatar : 1,
                             fullName : 1,
-                            subsciberCount : 1
+                            subscriberCount : 1 // <-- FIX: Corrected typo
                         }
                     }
                 ]
             }
         },
         {
-            $unwind : "$owner"
+            $unwind : "$owner" // Unwind owner to get object directly
         },
         {
             $lookup :{
                 from : "videos",
-                localField : "videos",
+                localField : "videos", // The 'videos' array in Playlist model
                 foreignField : "_id",
-                as : "videos",
+                as : "videos", // Output field for video details
                 pipeline : [
-                    {
+                    { // Lookup owner of each video in the playlist
                         $lookup : {
                             from : "users",
                             localField : "owner",
@@ -155,14 +156,16 @@ const getPlaylistById = asyncHandler(async (req, res) => {
                         }
                     },
                     {
-                        $unwind : "$owner"
+                        $unwind : "$owner" // Unwind video owner
                     },
                     {
-                        $project : {
+                        $project : { // Project video details
                             _id : 1,
                             title : 1,
                             description : 1,
                             views : 1,
+                            duration: 1, // Add duration for consistency with video schema
+                            thumbnail: "$thumbnail.url", // Project thumbnail URL directly
                             owner : 1,
                             createdAt : 1
                         }
@@ -172,7 +175,8 @@ const getPlaylistById = asyncHandler(async (req, res) => {
         }
     ])
 
-    if(!playlist) {
+    // Check if playlist array is empty. Aggregation always returns an array.
+    if(!playlist?.length) { // <-- FIX: Check for array length
         throw new ApiError(404, "getPlaylistById : Playlist not found")
     }
 
@@ -181,7 +185,7 @@ const getPlaylistById = asyncHandler(async (req, res) => {
         .json(
             new ApiResponse(
                 200,
-                playlist,
+                playlist[0], // <-- FIX: Return the first document, as frontend expects a single object
                 "Playlist fetched successfully"
             )
         )
@@ -333,7 +337,7 @@ const updatePlaylist = asyncHandler(async (req, res) => {
             new: true
         }
     )
-    if(!updatePlaylist){
+    if(!updtedPlaylist){ // Corrected typo here from !updatePlaylist
         throw new ApiError(500 , "updatePlaylist : error while updating playlist")
     }
 

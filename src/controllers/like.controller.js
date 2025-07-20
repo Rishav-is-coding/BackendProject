@@ -231,64 +231,64 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
 )
 
 const getLikedVideos = asyncHandler(async (req, res) => {
-    //TODO: get all liked videos
     const likedVideos = await Like.aggregate([
-        {
-            $match :{
-                likedBy : new mongoose.Types.ObjectId(req.user?._id)
+        { // Stage 1: Match 'Like' documents for the current user
+            $match: {
+                likedBy: new mongoose.Types.ObjectId(req.user?._id)
             }
         },
-        {
-            $lookup :{
-                from : "videos",
-                localField: "video",
-                foreignField : "_id",
-                as :"videos",
-                pipeline : [
-                    {
-                        $lookup :{
-                            from : "users",
-                            localField: "owner",
-                            foreignField : "_id",
-                            as : "owner"
-                        }
-                    },
-                    {
-                        $unwind : "$owner"
-                    },
-                    {
-                        $project : {
-                            _id : 1,
-                            title : 1,
-                            thumbnail : 1,
-                            duration : 1,
-                            views : 1,
-                            createdAt : 1,
-                            owner : {
-                                _id : 1,
-                                userName : 1,
-                                "avatar.url" :1 ,
-                                fullName : 1
-                            }
-                        }
-                    }
-                ]
+        { // Stage 2: Lookup the 'Video' details for each liked video
+            $lookup: {
+                from: "videos",        // The collection to join with
+                localField: "video",   // Field from the 'likes' collection
+                foreignField: "_id",   // Field from the 'videos' collection
+                as: "videoDetails"     // Name of the new array field to add to the input documents
             }
         },
-        {
-            $project : {
-                _id : 0,
-                videos :1
+        { // Stage 3: Unwind the 'videoDetails' array
+          // This deconstructs the array field from the input documents to output a document for each element.
+          // If a liked video does not exist (e.g., deleted), this stage will filter out that document,
+          // ensuring only valid videos are returned.
+            $unwind: "$videoDetails"
+        },
+        { // Stage 4: Lookup the 'User' details who owns the video
+            $lookup: {
+                from: "users",           // The collection to join with
+                localField: "videoDetails.owner", // Field from the 'videoDetails' (which is the video's owner ID)
+                foreignField: "_id",     // Field from the 'users' collection
+                as: "ownerDetails"       // Name of the new array field for owner details
+            }
+        },
+        { // Stage 5: Unwind the 'ownerDetails' array to get a direct owner object
+            $unwind: "$ownerDetails"
+        },
+        { // Stage 6: Project the desired fields into the final output document
+            $project: {
+                _id: "$videoDetails._id",       // Use the video's _id as the main _id
+                title: "$videoDetails.title",
+                description: "$videoDetails.description",
+                duration: "$videoDetails.duration",
+                views: "$videoDetails.views",
+                createdAt: "$videoDetails.createdAt",
+                thumbnail: "$videoDetails.thumbnail.url", // Access the URL directly if thumbnail is an object
+                videoFile: "$videoDetails.videoFile.url", // Optionally include video file URL if needed
+                owner: {
+                    _id: "$ownerDetails._id",
+                    userName: "$ownerDetails.userName",
+                    fullName: "$ownerDetails.fullName",
+                    avatar: "$ownerDetails.avatar.url" // Access the URL directly if avatar is an object
+                }
             }
         }
-    ])
+    ]);
 
+    // Now, 'likedVideos' will be a direct array of video objects, or an empty array if no likes are found.
     return res
         .status(200)
         .json(
             new ApiResponse(
                 200,
-                likedVideos?.[0]?.videos || 0,
+                likedVideos, // Directly return the aggregated array
                 "liked videos fetched successfully"
             )
         )
