@@ -143,7 +143,7 @@ const loginUser = asyncHandler(async (req, res) =>{
     const options = {
         httpOnly : true,
         secure : process.env.NODE_ENV === "production" ? true : false,
-        sameSite: 'Lax', // Recommended for CSRF protection with cookies
+        sameSite: 'None', // Recommended for CSRF protection with cookies
         domain: process.env.NODE_ENV === "production" ? '.onrender.com' : undefined
     }
 
@@ -184,7 +184,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     const options = {
         httpOnly : true,
         secure : process.env.NODE_ENV === "production" ? true : false,
-        sameSite: 'Lax', // Recommended for CSRF protection with cookies
+        sameSite: 'None', // Recommended for CSRF protection with cookies
         domain: process.env.NODE_ENV === "production" ? '.onrender.com' : undefined
     }
 
@@ -224,7 +224,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         const options = {
             httpOnly : true,
             secure : process.env.NODE_ENV === "production" ? true : false,
-            sameSite: 'Lax', // Recommended for CSRF protection with cookies
+            sameSite: 'None', // Recommended for CSRF protection with cookies
             domain: process.env.NODE_ENV === "production" ? '.onrender.com' : undefined
         };
 
