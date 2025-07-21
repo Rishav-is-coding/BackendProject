@@ -144,8 +144,6 @@ const loginUser = asyncHandler(async (req, res) =>{
         httpOnly : true,
         secure : process.env.NODE_ENV === "production" ? true : false,
         sameSite: 'None', // Recommended for CSRF protection with cookies
-        domain: process.env.NODE_ENV === "production" ? '.onrender.com' : undefined,
-        partitioned: true
     }
 
     return res
@@ -186,8 +184,6 @@ const logoutUser = asyncHandler(async (req, res) => {
         httpOnly : true,
         secure : process.env.NODE_ENV === "production" ? true : false,
         sameSite: 'None', // Recommended for CSRF protection with cookies
-        domain: process.env.NODE_ENV === "production" ? '.onrender.com' : undefined,
-        partitioned: true
     }
 
     return res
@@ -227,8 +223,6 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
             httpOnly : true,
             secure : process.env.NODE_ENV === "production" ? true : false,
             sameSite: 'None', // Recommended for CSRF protection with cookies
-            domain: process.env.NODE_ENV === "production" ? '.onrender.com' : undefined,
-            partitioned: true
         };
 
         // Generate new access and refresh tokens
