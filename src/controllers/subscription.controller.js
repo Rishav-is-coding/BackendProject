@@ -55,11 +55,11 @@ const toggleSubscription = asyncHandler(async (req, res) => {
 // controller to return subscriber list of a channel
 const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     const {channelId} = req.params
-    if(!channelId, !isValidObjectId(channelId)) {
+    if(!channelId || !isValidObjectId(channelId)) {
         throw new ApiError(400, "getUserChannelSubscribers : invalid channelId")
     }
 
-    const subscribers = await Subscription.aggregate([
+    const subscribersData  = await Subscription.aggregate([
         {
             $match :{
                 channel : new mongoose.Types.ObjectId(channelId)
@@ -68,31 +68,33 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
         {
             $lookup : {
                 from : "users",
-                localField : "channel",
+                localField : "subscriber",
                 foreignField : "_id",
                 as : "subscribers"
             }
         },
         {
-            $addFields : {
-                subscribersCount : {
-                    $size : "$subscribers"
-                }
-            }
+            $unwind : "$subscribers"
         },
+        // {
+        //     $addFields : {
+        //         subscribersCount : {
+        //             $size : "$subscriberInfo"
+        //         }
+        //     }
+        // },
         {
             $project : {
-                _id : 0,
-                subscribersCount : 1,
-                "subscribers._id" : 1,
-                "subscribers.userName" : 1,
-                "subscribers.avatar" : 1,
-                "subscribers.fullName" : 1
+                _id : "$subscribers._id", 
+                userName : "$subscribers.userName",
+                fullName : "$subscribers.fullName",
+                avatar : "$subscribers.avatar", 
+                createdAt: "$subscribers.createdAt"
             }
         }
     ])
 
-    if(!subscribers) {
+    if(!subscribersData?.length) {
         throw new ApiError(
             404,
             "getUserChannelSubscribers : No subscribers found"
@@ -104,7 +106,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
         .json(
             new ApiResponse(
                 200,
-                subscribers[0] || 0,
+                subscribersData,
                 "subscribers fetched"
             )
         )
